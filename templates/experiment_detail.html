@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}实验详情 - 化学实验平台{% endblock %}
+
+{% block content %}
+    <h1>实验详情</h1>
+    <p><strong>实验ID：</strong> {{ exp_id }}</p>
+    <p><strong>实验名称：</strong> {{ exp.name }}</p>
+    <p><strong>日期：</strong> {{ exp.date }}</p>
+    <p><strong>试剂：</strong> {{ exp.reagent }}</p>
+    <a href="{{ url_for('home') }}" class="btn btn-primary">返回首页</a>
+{% endblock %}

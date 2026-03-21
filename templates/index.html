@@ -3,7 +3,13 @@
 {% block title %}首页 - 化学实验平台{% endblock %}
 
 {% block content %}
-    <h1>化学实验模拟平台</h1>
+    <h1>{{ site_name }}</h1>
     <p class="lead">正在建设中，敬请期待...</p>
-    <p>本平台将为化学专业同学提供实验记录、计算模拟、报告生成等功能。</p>
+    <p>本平台将为化学专业同学提供以下功能：</p>
+    <ul>
+        {% for feature in features %}
+            <li>{{ feature }}</li>
+        {% endfor %}
+    </ul>
+    <p>当前服务器时间：{{ current_time }}</p>
 {% endblock %}
