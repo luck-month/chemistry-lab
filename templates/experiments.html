@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}实验教学库 - 化学实验平台{% endblock %}
+
+{% block content %}
+<h1>📚 实验教学库</h1>
+<p>点击实验名称查看详细步骤和原理：</p>
+<div class="list-group">
+    {% for id, exp in experiments.items() %}
+        <a href="{{ url_for('experiment_detail', exp_id=id) }}" class="list-group-item list-group-item-action">
+            <strong>{{ exp.name }}</strong>
+            <p class="mb-1 text-muted">{{ exp.description[:60] }}...</p>
+        </a>
+    {% endfor %}
+</div>
+{% endblock %}

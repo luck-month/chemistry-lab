@@ -23,16 +23,16 @@
                         <a class="nav-link" href="{{ url_for('home') }}">首页</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">实验记录</a>
+                            <a class="nav-link" href="{{ url_for('add_experiment') }}">添加记录</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">计算器</a>
+                            <a class="nav-link" href="{{ url_for('records') }}">我的记录</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('about') }}">关于</a>
+                            <a class="nav-link" href="{{ url_for('experiments') }}">实验库</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('experiment_detail', exp_id=1) }}">实验示例</a>
+                            <a class="nav-link" href="{{ url_for('about') }}">关于</a>
                     </li>
                 </ul>
             </div>

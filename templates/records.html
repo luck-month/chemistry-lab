@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}我的实验记录 - 化学实验平台{% endblock %}
+
+{% block content %}
+<h1>我的实验记录</h1>
+{% if records %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>实验名称</th>
+                    <th>日期</th>
+                    <th>主要试剂</th>
+                    <th>浓度 (mol/L)</th>
+                    <th>体积 (mL)</th>
+                    <th>温度 (°C)</th>
+                    <th>备注</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rec in records %}
+                <tr>
+                    <td>{{ rec.id }}</td>
+                    <td>{{ rec.name }}</td>
+                    <td>{{ rec.date }}</td>
+                    <td>{{ rec.reagent or '' }}</td>
+                    <td>{{ rec.concentration or '' }}</td>
+                    <td>{{ rec.volume or '' }}</td>
+                    <td>{{ rec.temperature or '' }}</td>
+                    <td>{{ rec.note or '' }}</td>
+                    <td>{{ rec.created_at }}</td>
+                    <td>
+                        <a href="{{ url_for('edit_record', record_id=rec.id) }}" class="btn btn-sm btn-primary">编辑</a>
+                        <!-- 关键：这里的 {{ rec.id }} 不能有空格或多余括号 -->
+                        <button type="button" class="btn btn-sm btn-danger" onclick="confirmDelete({{ rec.id }})">删除</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p>暂无实验记录。 <a href="{{ url_for('add_experiment') }}">添加第一条记录</a></p>
+{% endif %}
+
+<script>
+    function confirmDelete(id) {
+        if (confirm("确定要删除这条实验记录吗？")) {
+            window.location.href = "/delete/" + id;
+        }
+    }
+</script>
+{% endblock %}

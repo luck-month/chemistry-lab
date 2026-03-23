@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}添加实验记录 - 化学实验平台{% endblock %}
+
+{% block content %}
+<h1>添加实验记录</h1>
+<form method="post" action="{{ url_for('add_experiment') }}">
+    <div class="mb-3">
+        <label for="name" class="form-label">实验名称 *</label>
+        <input type="text" class="form-control" id="name" name="name" required>
+    </div>
+    <div class="mb-3">
+        <label for="date" class="form-label">日期 *</label>
+        <input type="date" class="form-control" id="date" name="date" required>
+    </div>
+    <div class="mb-3">
+        <label for="reagent" class="form-label">主要试剂</label>
+        <input type="text" class="form-control" id="reagent" name="reagent">
+    </div>
+    <div class="mb-3">
+        <label for="concentration" class="form-label">浓度 (mol/L)</label>
+        <input type="number" step="any" class="form-control" id="concentration" name="concentration">
+    </div>
+    <div class="mb-3">
+        <label for="volume" class="form-label">体积 (mL)</label>
+        <input type="number" step="any" class="form-control" id="volume" name="volume">
+    </div>
+    <div class="mb-3">
+        <label for="temperature" class="form-label">温度 (°C)</label>
+        <input type="number" step="any" class="form-control" id="temperature" name="temperature">
+    </div>
+    <div class="mb-3">
+        <label for="note" class="form-label">备注</label>
+        <textarea class="form-control" id="note" name="note" rows="3"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">保存记录</button>
+    <a href="{{ url_for('records') }}" class="btn btn-secondary">取消</a>
+</form>
+{% endblock %}
