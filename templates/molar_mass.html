@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}摩尔质量计算器 - 化学实验平台{% endblock %}
+
+{% block content %}
+<h1>🧪 摩尔质量计算器</h1>
+<p>输入化学式（如 H2O、Ca(OH)2），计算摩尔质量。</p>
+<form method="post">
+    <div class="mb-3">
+        <label for="formula" class="form-label">化学式</label>
+        <input type="text" class="form-control" id="formula" name="formula" required>
+    </div>
+    <button type="submit" class="btn btn-primary">计算</button>
+</form>
+{% if result %}
+    <div class="alert alert-success mt-3">{{ result }}</div>
+{% endif %}
+{% if error %}
+    <div class="alert alert-danger mt-3">{{ error }}</div>
+{% endif %}
+{% endblock %}

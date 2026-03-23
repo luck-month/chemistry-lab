@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}单位换算器 - 化学实验平台{% endblock %}
+
+{% block content %}
+<h1>📐 单位换算器</h1>
+<form method="post">
+    <div class="mb-3">
+        <label class="form-label">换算类型</label>
+        <select class="form-select" name="conv_type" id="conv_type" onchange="toggleFields()">
+            <option value="concentration">浓度 (mol/L ↔ g/L)</option>
+            <option value="volume">体积 (mL ↔ L)</option>
+            <option value="temperature">温度 (℃ ↔ ℉)</option>
+        </select>
+    </div>
+
+    <div id="concentration_fields">
+        <div class="mb-3">
+            <label for="value_conc" class="form-label">数值 (mol/L)</label>
+            <input type="number" step="any" class="form-control" id="value_conc" name="value">
+        </div>
+        <div class="mb-3">
+            <label for="molar_mass" class="form-label">溶质摩尔质量 (g/mol)</label>
+            <input type="number" step="any" class="form-control" id="molar_mass" name="molar_mass">
+        </div>
+    </div>
+
+    <div id="volume_fields" style="display:none;">
+        <div class="mb-3">
+            <label for="value_vol" class="form-label">数值</label>
+            <input type="number" step="any" class="form-control" id="value_vol" name="value">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">从</label>
+            <select class="form-select" name="unit_from">
+                <option value="mL">mL</option>
+                <option value="L">L</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">到</label>
+            <select class="form-select" name="unit_to">
+                <option value="L">L</option>
+                <option value="mL">mL</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="temperature_fields" style="display:none;">
+        <div class="mb-3">
+            <label for="value_temp" class="form-label">数值</label>
+            <input type="number" step="any" class="form-control" id="value_temp" name="value">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">从</label>
+            <select class="form-select" name="unit_from">
+                <option value="℃">℃</option>
+                <option value="℉">℉</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">到</label>
+            <select class="form-select" name="unit_to">
+                <option value="℉">℉</option>
+                <option value="℃">℃</option>
+            </select>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">换算</button>
+</form>
+
+<script>
+function toggleFields() {
+    var type = document.getElementById('conv_type').value;
+    document.getElementById('concentration_fields').style.display = type === 'concentration' ? 'block' : 'none';
+    document.getElementById('volume_fields').style.display = type === 'volume' ? 'block' : 'none';
+    document.getElementById('temperature_fields').style.display = type === 'temperature' ? 'block' : 'none';
+}
+// 初始化显示
+toggleFields();
+</script>
+
+{% if result %}
+    <div class="alert alert-success mt-3">{{ result }}</div>
+{% endif %}
+{% if error %}
+    <div class="alert alert-danger mt-3">{{ error }}</div>
+{% endif %}
+{% endblock %}

@@ -34,6 +34,16 @@
                     <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('about') }}">关于</a>
                     </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            计算器
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('molar_mass_calculator') }}">摩尔质量计算器</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('solution_calculator') }}">溶液配制计算器</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('unit_converter') }}">单位换算器</a></li>
+                        </ul>
+                    </li>
                 </ul>
             </div>
         </div>

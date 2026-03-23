@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}溶液配制计算器 - 化学实验平台{% endblock %}
+
+{% block content %}
+<h1>🧪 溶液配制计算器</h1>
+<p>计算配制一定浓度和体积的溶液所需的溶质质量。</p>
+<form method="post">
+    <div class="mb-3">
+        <label for="concentration" class="form-label">目标浓度 (mol/L)</label>
+        <input type="number" step="any" class="form-control" id="concentration" name="concentration" required>
+    </div>
+    <div class="mb-3">
+        <label for="volume" class="form-label">溶液体积 (mL)</label>
+        <input type="number" step="any" class="form-control" id="volume" name="volume" required>
+    </div>
+    <div class="mb-3">
+        <label for="molar_mass" class="form-label">溶质摩尔质量 (g/mol)</label>
+        <input type="number" step="any" class="form-control" id="molar_mass" name="molar_mass" required>
+        <div class="form-text">可使用摩尔质量计算器获取。</div>
+    </div>
+    <button type="submit" class="btn btn-primary">计算</button>
+</form>
+{% if result %}
+    <div class="alert alert-success mt-3">{{ result }}</div>
+{% endif %}
+{% if error %}
+    <div class="alert alert-danger mt-3">{{ error }}</div>
+{% endif %}
+{% endblock %}
