@@ -2,7 +2,8 @@ import sqlite3
 import datetime
 import random
 import re
-from flask import Flask, render_template, request, redirect, url_for
+import math
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 
 app = Flask(__name__)
 
@@ -62,6 +63,39 @@ def calculate_molar_mass(formula):
         else:
             return None
     return round(mass, 4)
+
+# ------------------- 滴定模拟器 -------------------
+def simulate_titration(acid_conc, acid_vol, base_conc):
+    """
+    强酸强碱滴定模拟
+    参数：
+        acid_conc: 酸浓度 (mol/L)
+        acid_vol:  酸体积 (mL)
+        base_conc: 碱浓度 (mol/L)
+    返回：
+        volumes: 滴定剂体积数组 (mL)
+        pH_values: 对应的 pH 数组
+    """
+    max_vol = acid_vol * 2
+    volumes = [max_vol * i / 99 for i in range(100)]  # 0 到 max_vol
+    pH_values = []
+
+    for v in volumes:
+        if v < acid_vol:
+            # 计量点前：剩余酸浓度
+            remaining_acid = acid_conc * acid_vol - base_conc * v
+            total_vol = acid_vol + v
+            H_conc = remaining_acid / total_vol
+            pH = -math.log10(H_conc) if H_conc > 0 else 7
+        else:
+            # 计量点后：过量碱浓度
+            excess_base = base_conc * (v - acid_vol)
+            total_vol = acid_vol + v
+            OH_conc = excess_base / total_vol
+            pH = 14 - (-math.log10(OH_conc)) if OH_conc > 0 else 7
+        pH_values.append(round(pH, 2))
+
+    return volumes, pH_values
 
 # ------------------- 实验教学库数据 -------------------
 experiments_library = {
@@ -289,6 +323,25 @@ def unit_converter():
         except ValueError:
             error = "请输入有效的数字。"
     return render_template('unit_converter.html', result=result, error=error)
+
+# ------------------- 滴定模拟器 -------------------
+@app.route('/titration')
+def titration():
+    return render_template('titration.html')
+
+@app.route('/api/titration', methods=['POST'])
+def titration_api():
+    data = request.get_json()
+    try:
+        acid_conc = float(data.get('acid_conc', 0.1))
+        acid_vol = float(data.get('acid_vol', 20))
+        base_conc = float(data.get('base_conc', 0.1))
+        if acid_conc <= 0 or acid_vol <= 0 or base_conc <= 0:
+            return jsonify({'error': '所有参数必须为正数'}), 400
+        volumes, pH_values = simulate_titration(acid_conc, acid_vol, base_conc)
+        return jsonify({'volumes': volumes, 'pH': pH_values})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
 # ------------------- 启动应用 -------------------
 if __name__ == '__main__':

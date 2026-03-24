@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}滴定模拟器 - 化学实验平台{% endblock %}
+
+{% block content %}
+<h1>🧪 酸碱滴定模拟器</h1>
+<p>输入酸/碱参数，生成滴定曲线并查看计量点。</p>
+
+<div class="row">
+    <div class="col-md-4">
+        <form id="titrationForm">
+            <div class="mb-3">
+                <label for="acid_conc" class="form-label">酸浓度 (mol/L)</label>
+                <input type="number" step="0.01" class="form-control" id="acid_conc" name="acid_conc" value="0.1" required>
+            </div>
+            <div class="mb-3">
+                <label for="acid_vol" class="form-label">酸体积 (mL)</label>
+                <input type="number" step="1" class="form-control" id="acid_vol" name="acid_vol" value="20" required>
+            </div>
+            <div class="mb-3">
+                <label for="base_conc" class="form-label">碱浓度 (mol/L)</label>
+                <input type="number" step="0.01" class="form-control" id="base_conc" name="base_conc" value="0.1" required>
+            </div>
+            <button type="submit" class="btn btn-primary">计算并绘制曲线</button>
+        </form>
+        <div id="errorMsg" class="alert alert-danger mt-3" style="display:none;"></div>
+    </div>
+    <div class="col-md-8">
+        <div id="chart" style="height: 400px;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- 引入 ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script>
+    // 获取表单元素和图表容器
+    const form = document.getElementById('titrationForm');
+    const errorDiv = document.getElementById('errorMsg');
+    let chart = null;
+
+    // 初始化图表
+    function initChart() {
+        const dom = document.getElementById('chart');
+        chart = echarts.init(dom);
+        chart.setOption({
+            title: { text: '滴定曲线' },
+            tooltip: { trigger: 'axis' },
+            xAxis: { name: '滴定剂体积 (mL)', nameLocation: 'middle', nameGap: 30 },
+            yAxis: { name: 'pH', nameLocation: 'middle', nameGap: 40 },
+            series: [{ type: 'line', data: [], smooth: false, lineStyle: { color: '#5470c6' } }]
+        });
+    }
+
+    // 绘制曲线
+    function drawCurve(volumes, pH) {
+        if (!chart) initChart();
+        chart.setOption({
+            series: [{ data: pH.map((y, idx) => [volumes[idx], y]) }],
+            xAxis: { min: Math.min(...volumes), max: Math.max(...volumes) }
+        });
+    }
+
+    // 提交表单处理
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorDiv.style.display = 'none';
+        const formData = new FormData(form);
+        const data = {
+            acid_conc: parseFloat(formData.get('acid_conc')),
+            acid_vol: parseFloat(formData.get('acid_vol')),
+            base_conc: parseFloat(formData.get('base_conc'))
+        };
+        try {
+            const response = await fetch('/api/titration', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (response.ok) {
+                drawCurve(result.volumes, result.pH);
+            } else {
+                errorDiv.textContent = result.error || '计算失败';
+                errorDiv.style.display = 'block';
+            }
+        } catch (err) {
+            errorDiv.textContent = '网络错误，请稍后重试';
+            errorDiv.style.display = 'block';
+        }
+    });
+
+    // 页面加载后自动绘制一次（使用默认参数）
+    window.addEventListener('load', () => {
+        initChart();
+        // 模拟一次默认计算
+        fetch('/api/titration', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ acid_conc: 0.1, acid_vol: 20, base_conc: 0.1 })
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.volumes) drawCurve(result.volumes, result.pH);
+        });
+    });
+</script>
+{% endblock %}
