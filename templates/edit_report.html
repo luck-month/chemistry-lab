@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}编辑报告 - 化学实验平台{% endblock %}
+
+{% block extra_head %}
+<!-- 引入 Quill 富文本编辑器 CSS 和 JS -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+<style>
+    #editor-container {
+        height: 500px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>编辑报告</h1>
+<p>您可以在下方编辑报告内容，然后导出为 PDF。</p>
+
+<!-- 隐藏域存储当前记录和模板信息 -->
+<input type="hidden" id="record_id" value="{{ record_id }}">
+<input type="hidden" id="template_key" value="{{ template_key }}">
+
+<!-- 编辑器容器 -->
+<div id="editor-container"></div>
+
+<button id="export-pdf" class="btn btn-primary">导出 PDF</button>
+<a href="{{ url_for('records') }}" class="btn btn-secondary">取消</a>
+
+<script>
+    // 初始化 Quill 编辑器，将传入的 HTML 内容作为初始值
+    var quill = new Quill('#editor-container', {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                [{ 'header': [1, 2, false] }],
+                ['bold', 'italic', 'underline'],
+                ['link', 'image'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['clean']
+            ]
+        }
+    });
+    // 设置初始内容
+    var initialContent = {{ content | tojson }};
+    quill.clipboard.dangerouslyPasteHTML(initialContent);
+
+    // 导出 PDF 功能
+    document.getElementById('export-pdf').addEventListener('click', function() {
+        // 获取编辑器中的 HTML 内容
+        var htmlContent = quill.root.innerHTML;
+        // 构造完整的 HTML 文档（加入样式）
+        var fullHtml = `<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>实验报告</title>
+            <style>
+                body { font-family: '宋体', SimSun, 'Times New Roman', serif; margin: 2cm; }
+                h1, h2, h3 { color: #2c3e50; }
+                p, li { line-height: 1.5; }
+                .container { max-width: 800px; margin: 0 auto; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                ${htmlContent}
+            </div>
+        </body>
+        </html>`;
+
+        // 发送到后端生成 PDF
+        fetch('/export_pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ html: fullHtml })
+        })
+        .then(response => response.blob())
+        .then(blob => {
+            // 创建下载链接
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '实验报告.pdf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        })
+        .catch(err => {
+            alert('导出失败：' + err);
+        });
+    });
+</script>
+{% endblock %}

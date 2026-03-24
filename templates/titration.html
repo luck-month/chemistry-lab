@@ -32,17 +32,25 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- 引入 ECharts -->
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<!-- 使用可靠的 CDN -->
+<script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
 <script>
-    // 获取表单元素和图表容器
     const form = document.getElementById('titrationForm');
     const errorDiv = document.getElementById('errorMsg');
     let chart = null;
 
-    // 初始化图表
     function initChart() {
         const dom = document.getElementById('chart');
+        if (!dom) {
+            console.error('chart容器不存在');
+            return;
+        }
+        if (typeof echarts === 'undefined') {
+            console.error('echarts 未加载，请检查网络');
+            errorDiv.textContent = '图表库加载失败，请刷新页面重试';
+            errorDiv.style.display = 'block';
+            return;
+        }
         chart = echarts.init(dom);
         chart.setOption({
             title: { text: '滴定曲线' },
@@ -51,27 +59,32 @@
             yAxis: { name: 'pH', nameLocation: 'middle', nameGap: 40 },
             series: [{ type: 'line', data: [], smooth: false, lineStyle: { color: '#5470c6' } }]
         });
+        console.log('图表初始化完成');
     }
 
-    // 绘制曲线
     function drawCurve(volumes, pH) {
-        if (!chart) initChart();
+        if (!chart) {
+            console.error('图表未初始化');
+            initChart();
+            if (!chart) return;
+        }
+        const data = volumes.map((v, idx) => [v, pH[idx]]);
         chart.setOption({
-            series: [{ data: pH.map((y, idx) => [volumes[idx], y]) }],
+            series: [{ data: data }],
             xAxis: { min: Math.min(...volumes), max: Math.max(...volumes) }
         });
+        console.log('曲线绘制完成');
     }
 
-    // 提交表单处理
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         errorDiv.style.display = 'none';
-        const formData = new FormData(form);
         const data = {
-            acid_conc: parseFloat(formData.get('acid_conc')),
-            acid_vol: parseFloat(formData.get('acid_vol')),
-            base_conc: parseFloat(formData.get('base_conc'))
+            acid_conc: parseFloat(document.getElementById('acid_conc').value),
+            acid_vol: parseFloat(document.getElementById('acid_vol').value),
+            base_conc: parseFloat(document.getElementById('base_conc').value)
         };
+        console.log('发送请求:', data);
         try {
             const response = await fetch('/api/titration', {
                 method: 'POST',
@@ -80,21 +93,23 @@
             });
             const result = await response.json();
             if (response.ok) {
+                console.log('收到数据:', result);
                 drawCurve(result.volumes, result.pH);
             } else {
                 errorDiv.textContent = result.error || '计算失败';
                 errorDiv.style.display = 'block';
+                console.error('后端错误:', result);
             }
         } catch (err) {
             errorDiv.textContent = '网络错误，请稍后重试';
             errorDiv.style.display = 'block';
+            console.error('请求异常:', err);
         }
     });
 
-    // 页面加载后自动绘制一次（使用默认参数）
     window.addEventListener('load', () => {
         initChart();
-        // 模拟一次默认计算
+        // 自动请求默认数据
         fetch('/api/titration', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -103,7 +118,9 @@
         .then(res => res.json())
         .then(result => {
             if (result.volumes) drawCurve(result.volumes, result.pH);
-        });
+            else console.error('默认数据请求失败', result);
+        })
+        .catch(err => console.error('默认请求异常', err));
     });
 </script>
 {% endblock %}

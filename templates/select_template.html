@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}选择报告模板 - 化学实验平台{% endblock %}
+
+{% block content %}
+<h1>选择报告模板</h1>
+<p>正在为实验「<strong>{{ record.name }}</strong>」生成报告，请选择模板：</p>
+
+<form method="post" action="{{ url_for('preview_report') }}">
+    <input type="hidden" name="record_id" value="{{ record.id }}">
+    <div class="list-group">
+        {% for key, tpl in templates.items() %}
+            <div class="list-group-item">
+                <input class="form-check-input me-2" type="radio" name="template_key" value="{{ key }}" id="tpl_{{ key }}" required>
+                <label class="form-check-label" for="tpl_{{ key }}">
+                    <strong>{{ tpl.name }}</strong>
+                </label>
+            </div>
+        {% endfor %}
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">下一步：编辑报告</button>
+</form>
+{% endblock %}

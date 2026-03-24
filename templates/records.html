@@ -38,6 +38,11 @@
                         <!-- 关键：这里的 {{ rec.id }} 不能有空格或多余括号 -->
                         <button type="button" class="btn btn-sm btn-danger" onclick="confirmDelete({{ rec.id }})">删除</button>
                     </td>
+                    <td>
+                        <a href="{{ url_for('edit_record', record_id=rec.id) }}" class="btn btn-sm btn-primary">编辑</a>
+                        <a href="{{ url_for('select_template', record_id=rec.id) }}" class="btn btn-sm btn-success">生成报告</a>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="confirmDelete({{ rec.id }})">删除</button>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

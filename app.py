@@ -3,7 +3,9 @@ import datetime
 import random
 import re
 import math
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, make_response
+from jinja2 import Template
+from weasyprint import HTML
 
 app = Flask(__name__)
 
@@ -96,6 +98,91 @@ def simulate_titration(acid_conc, acid_vol, base_conc):
         pH_values.append(round(pH, 2))
 
     return volumes, pH_values
+
+# ------------------- 反应规则库 -------------------
+REACTION_RULES = [
+    {
+        "name": "酯化",
+        "reactants": ["羧酸", "醇"],
+        "product_smiles": "C(=O)OC",
+        "condition": "含羧基(-COOH)和羟基(-OH)的反应物",
+        "detect": {
+            "羧酸": lambda s: "C(=O)O" in s,
+            "醇": lambda s: "O" in s and not "C(=O)O" in s
+        }
+    },
+    {
+        "name": "加成（烯烃+卤素）",
+        "reactants": ["烯烃", "卤素"],
+        "product_smiles": "C(Br)CBr",
+        "condition": "含碳碳双键(C=C)和卤素(Br2/Cl2)",
+        "detect": {
+            "烯烃": lambda s: "C=C" in s,
+            "卤素": lambda s: "Br" in s or "Cl" in s
+        }
+    }
+]
+
+def predict_reaction(reactant1, reactant2):
+    """根据规则库预测反应"""
+    for rule in REACTION_RULES:
+        conditions = list(rule["detect"].values())
+        if conditions[0](reactant1) and conditions[1](reactant2):
+            return rule["name"], rule["product_smiles"]
+        if conditions[0](reactant2) and conditions[1](reactant1):
+            return rule["name"], rule["product_smiles"]
+    return None, None
+
+# ------------------- 报告模板库 -------------------
+REPORT_TEMPLATES = {
+    "default": {
+        "name": "标准实验报告模板",
+        "content": """
+# {{ experiment.name }} 实验报告
+
+**姓名**：{{ user_name }}  
+**日期**：{{ experiment.date }}  
+
+## 实验目的
+{{ experiment.purpose if experiment.purpose else "（请填写实验目的）" }}
+
+## 实验原理
+{{ experiment.principle if experiment.principle else "（请填写实验原理）" }}
+
+## 仪器与试剂
+- 试剂：{{ experiment.reagent }}
+- 浓度：{{ experiment.concentration }} mol/L
+- 体积：{{ experiment.volume }} mL
+- 温度：{{ experiment.temperature }} ℃
+
+## 实验步骤
+{{ experiment.steps if experiment.steps else "（请填写实验步骤）" }}
+
+## 数据记录与处理
+（请在此处添加数据记录表格和计算结果）
+
+## 结果与讨论
+（请填写结果分析和讨论）
+
+## 结论
+（请填写实验结论）
+        """
+    },
+    "short": {
+        "name": "简洁报告模板",
+        "content": """
+# {{ experiment.name }} 实验报告
+**日期**：{{ experiment.date }}  
+**试剂**：{{ experiment.reagent }}  
+
+**实验内容**：  
+{{ experiment.note if experiment.note else "无" }}
+
+**结论**：  
+（请填写结论）
+        """
+    }
+}
 
 # ------------------- 实验教学库数据 -------------------
 experiments_library = {
@@ -246,7 +333,7 @@ def delete_record(record_id):
     conn.close()
     return redirect(url_for('records'))
 
-# ------------------- 摩尔质量计算器 -------------------
+# ------------------- 化学计算器 -------------------
 @app.route('/calculator/molar_mass', methods=['GET', 'POST'])
 def molar_mass_calculator():
     result = None
@@ -263,7 +350,6 @@ def molar_mass_calculator():
             error = "请输入化学式。"
     return render_template('molar_mass.html', result=result, error=error)
 
-# ------------------- 溶液配制计算器 -------------------
 @app.route('/calculator/solution', methods=['GET', 'POST'])
 def solution_calculator():
     result = None
@@ -283,7 +369,6 @@ def solution_calculator():
             error = "请输入有效的数字。"
     return render_template('solution.html', result=result, error=error)
 
-# ------------------- 单位换算器 -------------------
 @app.route('/calculator/unit_converter', methods=['GET', 'POST'])
 def unit_converter():
     result = None
@@ -343,45 +428,7 @@ def titration_api():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
-# ------------------- 反应规则库 -------------------
-REACTION_RULES = [
-    {
-        "name": "酯化",
-        "reactants": ["羧酸", "醇"],
-        "product_smiles": "C(=O)OC",  # 示例产物 SMILES，实际产物取决于具体反应物
-        "condition": "含羧基(-COOH)和羟基(-OH)的反应物",
-        "detect": {
-            "羧酸": lambda s: "C(=O)O" in s,   # 简单检测羧基
-            "醇": lambda s: "O" in s and not "C(=O)O" in s  # 含氧但不是羧酸
-        }
-    },
-    {
-        "name": "加成（烯烃+卤素）",
-        "reactants": ["烯烃", "卤素"],
-        "product_smiles": "C(Br)CBr",  # 示例产物
-        "condition": "含碳碳双键(C=C)和卤素(Br2/Cl2)",
-        "detect": {
-            "烯烃": lambda s: "C=C" in s,
-            "卤素": lambda s: "Br" in s or "Cl" in s
-        }
-    }
-]
-
-def predict_reaction(reactant1, reactant2):
-    """
-    根据规则库预测反应
-    返回匹配的规则名称和产物 SMILES，否则返回 None
-    """
-    for rule in REACTION_RULES:
-        # 检测两个反应物是否分别匹配规则中的两个条件
-        # 这里简化：假设 reactant1 匹配第一个条件，reactant2 匹配第二个条件；或交换
-        conditions = list(rule["detect"].values())
-        if conditions[0](reactant1) and conditions[1](reactant2):
-            return rule["name"], rule["product_smiles"]
-        if conditions[0](reactant2) and conditions[1](reactant1):
-            return rule["name"], rule["product_smiles"]
-    return None, None
-
+# ------------------- 反应预测 -------------------
 @app.route('/reaction', methods=['GET', 'POST'])
 def reaction():
     result = None
@@ -400,6 +447,62 @@ def reaction():
         else:
             error = "请输入两个反应物的 SMILES。"
     return render_template('reaction.html', result=result, product=product, error=error)
+
+# ------------------- 报告生成 -------------------
+@app.route('/generate_report/<int:record_id>')
+def select_template(record_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM experiments WHERE id = ?', (record_id,))
+    record = cursor.fetchone()
+    conn.close()
+    if not record:
+        return "记录不存在", 404
+    templates = REPORT_TEMPLATES
+    return render_template('select_template.html', templates=templates, record=record)
+
+@app.route('/preview_report', methods=['POST'])
+def preview_report():
+    template_key = request.form.get('template_key')
+    record_id = request.form.get('record_id')
+    if not template_key or not record_id:
+        return "参数错误", 400
+    template = REPORT_TEMPLATES.get(template_key)
+    if not template:
+        return "模板不存在", 404
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM experiments WHERE id = ?', (record_id,))
+    record = cursor.fetchone()
+    conn.close()
+    if not record:
+        return "记录不存在", 404
+    context = {
+        'experiment': dict(record),
+        'user_name': "张三",  # 后续可改为登录用户
+    }
+    jinja_template = Template(template['content'])
+    rendered_html = jinja_template.render(**context)
+    return render_template('edit_report.html',
+                           content=rendered_html,
+                           record_id=record_id,
+                           template_key=template_key)
+
+@app.route('/export_pdf', methods=['POST'])
+def export_pdf():
+    data = request.get_json()
+    html_content = data.get('html', '')
+    if not html_content:
+        return "内容为空", 400
+    try:
+        pdf = HTML(string=html_content).write_pdf()
+        response = make_response(pdf)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = 'attachment; filename=report.pdf'
+        return response
+    except Exception as e:
+        return str(e), 500
+
 # ------------------- 启动应用 -------------------
 if __name__ == '__main__':
     app.run(debug=True)
