@@ -343,6 +343,63 @@ def titration_api():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
+# ------------------- 反应规则库 -------------------
+REACTION_RULES = [
+    {
+        "name": "酯化",
+        "reactants": ["羧酸", "醇"],
+        "product_smiles": "C(=O)OC",  # 示例产物 SMILES，实际产物取决于具体反应物
+        "condition": "含羧基(-COOH)和羟基(-OH)的反应物",
+        "detect": {
+            "羧酸": lambda s: "C(=O)O" in s,   # 简单检测羧基
+            "醇": lambda s: "O" in s and not "C(=O)O" in s  # 含氧但不是羧酸
+        }
+    },
+    {
+        "name": "加成（烯烃+卤素）",
+        "reactants": ["烯烃", "卤素"],
+        "product_smiles": "C(Br)CBr",  # 示例产物
+        "condition": "含碳碳双键(C=C)和卤素(Br2/Cl2)",
+        "detect": {
+            "烯烃": lambda s: "C=C" in s,
+            "卤素": lambda s: "Br" in s or "Cl" in s
+        }
+    }
+]
+
+def predict_reaction(reactant1, reactant2):
+    """
+    根据规则库预测反应
+    返回匹配的规则名称和产物 SMILES，否则返回 None
+    """
+    for rule in REACTION_RULES:
+        # 检测两个反应物是否分别匹配规则中的两个条件
+        # 这里简化：假设 reactant1 匹配第一个条件，reactant2 匹配第二个条件；或交换
+        conditions = list(rule["detect"].values())
+        if conditions[0](reactant1) and conditions[1](reactant2):
+            return rule["name"], rule["product_smiles"]
+        if conditions[0](reactant2) and conditions[1](reactant1):
+            return rule["name"], rule["product_smiles"]
+    return None, None
+
+@app.route('/reaction', methods=['GET', 'POST'])
+def reaction():
+    result = None
+    product = None
+    error = None
+    if request.method == 'POST':
+        reactant1 = request.form.get('reactant1', '').strip()
+        reactant2 = request.form.get('reactant2', '').strip()
+        if reactant1 and reactant2:
+            rule_name, product_smiles = predict_reaction(reactant1, reactant2)
+            if rule_name:
+                result = f"匹配规则：{rule_name}"
+                product = f"可能产物 SMILES：{product_smiles}"
+            else:
+                error = "未匹配到已知反应规则，请尝试其他反应物或检查 SMILES 格式。"
+        else:
+            error = "请输入两个反应物的 SMILES。"
+    return render_template('reaction.html', result=result, product=product, error=error)
 # ------------------- 启动应用 -------------------
 if __name__ == '__main__':
     app.run(debug=True)

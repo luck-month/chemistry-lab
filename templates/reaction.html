@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}反应预测 - 化学实验平台{% endblock %}
+
+{% block content %}
+<h1>🧪 简单反应预测</h1>
+<p>输入两个反应物的 SMILES（简化分子线性输入规范），系统将基于预定义规则预测可能产物。</p>
+<p><strong>示例 SMILES：</strong></p>
+<ul>
+    <li>乙酸：<code>CC(=O)O</code>（羧基）</li>
+    <li>乙醇：<code>CCO</code>（羟基）</li>
+    <li>乙烯：<code>C=C</code>（碳碳双键）</li>
+    <li>溴：<code>BrBr</code>（卤素）</li>
+</ul>
+
+<form method="post">
+    <div class="mb-3">
+        <label for="reactant1" class="form-label">反应物 1 SMILES</label>
+        <input type="text" class="form-control" id="reactant1" name="reactant1" placeholder="例如：CC(=O)O" required>
+    </div>
+    <div class="mb-3">
+        <label for="reactant2" class="form-label">反应物 2 SMILES</label>
+        <input type="text" class="form-control" id="reactant2" name="reactant2" placeholder="例如：CCO" required>
+    </div>
+    <button type="submit" class="btn btn-primary">预测</button>
+    <button type="button" class="btn btn-secondary" id="exampleEster">示例：酯化</button>
+    <button type="button" class="btn btn-secondary" id="exampleAddition">示例：加成</button>
+</form>
+
+{% if result %}
+    <div class="alert alert-success mt-3">{{ result }}</div>
+{% endif %}
+{% if product %}
+    <div class="alert alert-info mt-3">{{ product }}</div>
+{% endif %}
+{% if error %}
+    <div class="alert alert-danger mt-3">{{ error }}</div>
+{% endif %}
+
+<script>
+    // 示例按钮填充
+    document.getElementById('exampleEster').addEventListener('click', () => {
+        document.getElementById('reactant1').value = 'CC(=O)O';
+        document.getElementById('reactant2').value = 'CCO';
+    });
+    document.getElementById('exampleAddition').addEventListener('click', () => {
+        document.getElementById('reactant1').value = 'C=C';
+        document.getElementById('reactant2').value = 'BrBr';
+    });
+</script>
+{% endblock %}
